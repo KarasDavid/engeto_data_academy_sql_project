@@ -95,7 +95,41 @@ WHERE (food_name = "Mléko polotučné pasterované" AND (food_price_measured_fr
 OR (food_name = "Chléb konzumní kmínový" AND (food_price_measured_from = '2006-01-02' OR food_price_measured_from = '2018-12-10'))
 ORDER BY food_name, industry_branch, payroll_year, payroll_quarter, food_price_measured_from ;
 
+/*
+ * Task 3
+ */
 
+SELECT
+	older.food_name,
+	older.food_price AS food_price_from_2015_12_14_to_2015_12_20,
+	newer.food_price AS food_price_from_2018_12_10_to_2018_12_16,
+	older.unit,
+	round((newer.food_price / older.food_price * 100-100) / 3, 2) AS average_annual_increase
+FROM
+(
+SELECT
+	DISTINCT food_name,
+	food_price,
+	unit,
+	food_price_measured_from,
+	food_price_measured_to 
+FROM t_david_karas_project_sql_primary_final
+WHERE food_price_measured_from = '2015-12-14'
+ORDER BY food_name, food_price_measured_from
+) older
+JOIN 
+(SELECT
+	DISTINCT food_name,
+	food_price,
+	unit,
+	food_price_measured_from,
+	food_price_measured_to 
+FROM t_david_karas_project_sql_primary_final
+WHERE food_price_measured_from = '2018-12-10' 
+ORDER BY food_name, food_price_measured_from
+) newer
+ON older.food_name = newer.food_name
+ORDER BY average_annual_increase;
 
 
 
