@@ -249,5 +249,69 @@ ON a.price_year = b.price_year-1
 ) price
 ON salary.payroll_year_x = price.price_year_x;
 
+/*
+ *  Task 5
+ */
+
+SELECT
+	t_david_karas_project_SQL_secondary_final.year_x,
+	t_david_karas_project_SQL_secondary_final.GDP_x,
+	salary.average_gross_salary_x,
+	price.average_food_price_x,
+	t_david_karas_project_SQL_secondary_final.year_y,
+	t_david_karas_project_SQL_secondary_final.GDP_y,
+	salary.average_gross_salary_y,
+	price.average_food_price_y,
+	t_david_karas_project_SQL_secondary_final.GDP_growth_between_years_y_and_x_in_percentage,
+	salary.average_gross_salary_growth_between_years_y_and_x_in_percentage,
+	price.average_food_price_growth_between_years_y_and_x_in_percentage
+FROM
+(SELECT *,
+	ROUND((average_gross_salary_y / average_gross_salary_x*100)-100,2) AS average_gross_salary_growth_between_years_y_and_x_in_percentage
+FROM 
+(SELECT 
+	payroll_year AS payroll_year_x,
+	ROUND(AVG(average_gross_salary),0) AS average_gross_salary_x
+FROM t_david_karas_project_sql_primary_final
+GROUP BY payroll_year
+)a
+JOIN
+(SELECT 
+	payroll_year AS payroll_year_y,
+	ROUND(AVG(average_gross_salary),0) AS average_gross_salary_y
+FROM t_david_karas_project_sql_primary_final
+GROUP BY payroll_year
+)b
+ON a.payroll_year_x = b.payroll_year_y-1
+) salary
+JOIN 
+(SELECT *,
+	ROUND((average_food_price_y / average_food_price_x*100)-100,2) AS average_food_price_growth_between_years_y_and_x_in_percentage
+FROM 
+(SELECT
+	ROUND(AVG(food_price),2) AS average_food_price_x,
+	YEAR(food_price_measured_from) AS price_year_x
+FROM t_david_karas_project_sql_primary_final
+GROUP BY YEAR(food_price_measured_from)
+)a
+JOIN
+(SELECT
+	ROUND(AVG(food_price),2) AS average_food_price_y,
+	YEAR(food_price_measured_from) AS price_year_y
+FROM t_david_karas_project_sql_primary_final
+GROUP BY YEAR(food_price_measured_from)
+)b
+ON a.price_year_x = b.price_year_y-1
+) price
+ON salary.payroll_year_x = price.price_year_x
+RIGHT JOIN t_david_karas_project_SQL_secondary_final
+ON salary.payroll_year_x = t_david_karas_project_SQL_secondary_final.year_x
+WHERE t_david_karas_project_SQL_secondary_final.country = "Czech republic";
+
+
+
+
+
+
 
 
