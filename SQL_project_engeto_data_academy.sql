@@ -91,38 +91,40 @@ SELECT
 	a.industry_branch,
 	a.payroll_year_x,
 	a.payroll_quarter_x,
-	a.gross_salary_x,
+	a.avg_gross_salary_x,
 	b.payroll_year_y,
 	b.payroll_quarter_y,
-	b.gross_salary_y,
-	ROUND((b.gross_salary_y / a.gross_salary_x - 1) * 100, 2) AS salary_diff_years_y_x_in_percent,
+	b.avg_gross_salary_y,
+	ROUND((b.avg_gross_salary_y / a.avg_gross_salary_x - 1) * 100, 2) AS avg_salary_diff_years_y_x_in_percent,
 	CASE
-		WHEN ROUND((b.gross_salary_y / a.gross_salary_x - 1) * 100, 2) < 0 
+		WHEN ROUND((b.avg_gross_salary_y / a.avg_gross_salary_x - 1) * 100, 2) < 0 
 		THEN 1
 		ELSE 0
-	END AS year_on_year_drop_in_wages
+	END AS year_on_year_drop_in_avg_wages
 FROM(
 	SELECT
-		DISTINCT industry_branch,
-		gross_salary AS gross_salary_x, 
+		industry_branch,
+		AVG(gross_salary) AS avg_gross_salary_x, 
 		payroll_year AS payroll_year_x,
 		payroll_quarter AS payroll_quarter_x
 	FROM t_david_karas_project_sql_primary_final dk1
+	GROUP BY industry_branch, payroll_year_x, payroll_quarter_x 
 	ORDER BY industry_branch, payroll_year, payroll_quarter
 ) a
 JOIN(
 	SELECT 
-		DISTINCT industry_branch,
-    	gross_salary AS gross_salary_y,
+		industry_branch,
+    	AVG(gross_salary) AS avg_gross_salary_y,
 		payroll_year AS payroll_year_y,
 		payroll_quarter AS payroll_quarter_y
 	FROM t_david_karas_project_sql_primary_final
+	GROUP BY industry_branch, payroll_year_y, payroll_quarter_y 
 	ORDER by industry_branch, payroll_year, payroll_quarter
 ) b
 	ON a.industry_branch = b.industry_branch 
 	AND a.payroll_year_x = b.payroll_year_y -1
 	AND a.payroll_quarter_x = b.payroll_quarter_y
-HAVING year_on_year_drop_in_wages = 1;
+HAVING year_on_year_drop_in_avg_wages = 1;
 
 /*
  * Task 2
@@ -132,13 +134,13 @@ SELECT
 	industry_branch,
 	payroll_year,
 	payroll_quarter, 
-	gross_salary,
+	AVG(gross_salary) AS avg_gross_salary,
 	food_name,
 	food_price_measured_from,
 	food_price_measured_to,
-	food_price,
+	AVG(food_price) AS avg_food_price,
 	unit,
-	ROUND(gross_salary / food_price, 2) AS kg_bread_l_milk_gross_salary
+	ROUND(AVG(gross_salary) / AVG(food_price), 2) AS kg_bread_l_milk_avg_gross_salary
 FROM t_david_karas_project_sql_primary_final
 WHERE (food_name = "Mléko polotučné pasterované" 
 	AND (food_price_measured_from = '2006-01-02' 
@@ -146,7 +148,8 @@ WHERE (food_name = "Mléko polotučné pasterované"
 	OR (food_name = "Chléb konzumní kmínový"
 		AND (food_price_measured_from = '2006-01-02' 
 			OR food_price_measured_from = '2018-12-10'))
-ORDER BY food_name, industry_branch, payroll_year, payroll_quarter, food_price_measured_from ;
+GROUP BY industry_branch, payroll_year, payroll_quarter, food_name, food_price_measured_from, food_price_measured_to, unit
+ORDER BY food_name, industry_branch, payroll_year, payroll_quarter, food_price_measured_from;
 
 /*
  * Task 3
@@ -154,34 +157,36 @@ ORDER BY food_name, industry_branch, payroll_year, payroll_quarter, food_price_m
 
 SELECT
 	older.food_name,
-	older.food_price AS food_price_14_12_to_20_12_2015,
-	newer.food_price AS food_price_10_12_to_16_12_2018,
+	older.avg_food_price AS food_price_14_12_to_20_12_2015,
+	newer.avg_food_price AS food_price_10_12_to_16_12_2018,
 	older.unit,
-	ROUND((newer.food_price / older.food_price * 100-100) / 3, 2) AS average_annual_price_increase
+	ROUND((newer.avg_food_price / older.avg_food_price * 100-100) / 3, 2) AS avg_annual_price_increase
 FROM(
 	SELECT
-		DISTINCT food_name,
-		food_price,
+		food_name,
+		AVG(food_price) AS avg_food_price,
 		unit,
 		food_price_measured_from,
 		food_price_measured_to 
 	FROM t_david_karas_project_sql_primary_final
 	WHERE food_price_measured_from = '2015-12-14'
+	GROUP BY food_name, unit, food_price_measured_from, food_price_measured_to
 	ORDER BY food_name, food_price_measured_from
 ) older
 JOIN(
 	SELECT
-		DISTINCT food_name,
-		food_price,
+		food_name,
+		AVG(food_price) AS avg_food_price,
 		unit,
 		food_price_measured_from,
 		food_price_measured_to 
 	FROM t_david_karas_project_sql_primary_final
 	WHERE food_price_measured_from = '2018-12-10' 
+	GROUP BY food_name, unit, food_price_measured_from, food_price_measured_to
 	ORDER BY food_name, food_price_measured_from
 ) newer
 	ON older.food_name = newer.food_name
-ORDER BY average_annual_price_increase;
+ORDER BY avg_annual_price_increase;
 
 /*
  * Task 4
